@@ -6,11 +6,11 @@ export const birthdayData = {
   voiceMessage: "/assets/audio/voice-message.mp3",
   backgroundMusic: "/assets/audio/background-music.mp3",
   photos: [
-    "/assets/photos/photo1.jpg",
-    "/assets/photos/photo2.jpg",
-    "/assets/photos/photo3.jpg",
-    "/assets/photos/photo4.jpg",
-    "/assets/photos/photo5.jpg",
+    "/assets/photos/photo1.jpeg",
+    "/assets/photos/photo2.jpeg",
+    "/assets/photos/photo3.jpeg",
+    "/assets/photos/photo4.jpeg",
+    "/assets/photos/photo5.png",
   ],
   captions: [
     "Happy Birthday ❤️",
