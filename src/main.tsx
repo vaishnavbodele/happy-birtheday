@@ -790,8 +790,8 @@ function App() {
       }
     };
 
-    window.addEventListener("pointerdown", unlockAudio, { once: true });
-    window.addEventListener("keydown", unlockAudio, { once: true });
+    window.addEventListener("pointerdown", unlockAudio);
+    window.addEventListener("keydown", unlockAudio);
 
     return () => {
       window.removeEventListener("pointerdown", unlockAudio);
