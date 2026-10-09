@@ -183,7 +183,13 @@ function Scene({
   );
 }
 
-function GiftScene({ next }: { next: () => void }) {
+function GiftScene({
+  next,
+  startMusic,
+}: {
+  next: () => void;
+  startMusic: () => Promise<void>;
+}) {
   const [open, setOpen] = useState(false);
   return (
     <Scene
@@ -208,6 +214,7 @@ function GiftScene({ next }: { next: () => void }) {
         <motion.button
           className={`gift-real ${open ? "opened" : ""}`}
           onClick={() => {
+            void startMusic();
             setOpen(true);
             setTimeout(next, 1250);
           }}
@@ -783,26 +790,6 @@ function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, [scene]);
 
-  useEffect(() => {
-    const unlockAudio = () => {
-      if (bg.current && bg.current.paused) {
-        void startMusic();
-      }
-    };
-
-    window.addEventListener("pointerdown", unlockAudio);
-    window.addEventListener("keydown", unlockAudio);
-
-    return () => {
-      window.removeEventListener("pointerdown", unlockAudio);
-      window.removeEventListener("keydown", unlockAudio);
-    };
-  }, []);
-
-  useEffect(() => {
-    void startMusic();
-  }, []);
-
   const handleVoicePlaybackChange = (playing: boolean) => {
     const audio = bg.current;
     if (!audio) return;
@@ -838,7 +825,6 @@ function App() {
         loop
         preload="auto"
         playsInline
-        autoPlay
       />
       <AmbientParticles />
       <SceneChrome
@@ -856,7 +842,9 @@ function App() {
           exit={{ opacity: 0, scale: 1.02, filter: "blur(12px)" }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
         >
-          {scene === 0 && <GiftScene next={() => go(1)} />}{" "}
+          {scene === 0 && (
+            <GiftScene next={() => go(1)} startMusic={startMusic} />
+          )}{" "}
           {scene === 1 && <BalloonScene next={() => go(2)} />}{" "}
           {scene === 2 && <CakeScene next={() => go(3)} />}{" "}
           {scene === 3 && (
