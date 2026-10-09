@@ -694,16 +694,28 @@ h2 {
 }
 .flame {
   position: absolute;
-  left: 50%;
-  top: -38px;
+  left: 32%;
+  top: -55px;
   width: 20px;
-  height: 33px;
-  transform: translateX(-50%) rotate(45deg);
-  border-radius: 60% 40% 60% 40%;
+  height: 35px;
+  transform: translateX(-01%) rotate(10deg) scale(0.9);
+  transform-origin: bottom center;
+  border-radius: 0% 90%;
   background: linear-gradient(#fff8bc, #ffb02e, #ec351b);
   box-shadow: 0 0 28px #ffbd4c;
-  animation: flicker 0.45s infinite alternate;
+  animation: flicker 2.5s ease-in-out infinite alternate;
 }
+
+/* Flame ka upper part halka sa move karega */
+ @keyframes flicker {
+  0%, 100% {
+    transform: translateX(-1%) rotate(1deg) scale(1);
+  }
+
+  50% {
+    transform: translateX(-1%) rotate(2deg) scale(1.02);
+  } 
+ }
 .flame-out {
   position: absolute;
   left: 50%;

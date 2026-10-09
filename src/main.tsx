@@ -429,22 +429,52 @@ function CakeScene({ next }: { next: () => void }) {
   );
 }
 
-function VoiceScene({ next }: { next: () => void }) {
+function VoiceScene({
+  next,
+  onVoicePlayStateChange,
+}: {
+  next: () => void;
+  onVoicePlayStateChange?: (playing: boolean) => void;
+}) {
   const ref = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [error, setError] = useState(false);
+
+  const setVoiceState = (isPlaying: boolean) => {
+    setPlaying(isPlaying);
+    onVoicePlayStateChange?.(isPlaying);
+  };
+
   const toggle = () => {
     if (!ref.current) return;
     if (ref.current.paused) {
       ref.current
         .play()
-        .then(() => setPlaying(true))
+        .then(() => setVoiceState(true))
         .catch(() => setError(true));
     } else {
       ref.current.pause();
-      setPlaying(false);
+      setVoiceState(false);
     }
   };
+
+  const continueToNext = () => {
+    if (ref.current && !ref.current.paused) {
+      ref.current.pause();
+    }
+    onVoicePlayStateChange?.(false);
+    next();
+  };
+
+  useEffect(() => {
+    return () => {
+      if (ref.current && !ref.current.paused) {
+        ref.current.pause();
+      }
+      onVoicePlayStateChange?.(false);
+    };
+  }, []);
+
   return (
     <Scene
       index={3}
@@ -455,7 +485,9 @@ function VoiceScene({ next }: { next: () => void }) {
         ref={ref}
         src={data.voiceMessage}
         onError={() => setError(true)}
-        onEnded={() => setPlaying(false)}
+        onPlay={() => setVoiceState(true)}
+        onPause={() => setVoiceState(false)}
+        onEnded={() => setVoiceState(false)}
       />
       <div className="voice-layout">
         <motion.div
@@ -509,7 +541,7 @@ function VoiceScene({ next }: { next: () => void }) {
           </div>
         </div>
       </div>
-      <button className="text-btn" onClick={next}>
+      <button className="text-btn" onClick={continueToNext}>
         Tap to continue <ArrowRight size={15} />
       </button>
     </Scene>
@@ -721,7 +753,27 @@ function App() {
   const [scene, setScene] = useState(0);
   const [music, setMusic] = useState(false);
   const bg = useRef<HTMLAudioElement>(null);
+  const backgroundMusicEnabled = useRef(false);
   const go = (n: number) => setScene(Math.max(0, Math.min(7, n)));
+
+  const startMusic = async () => {
+    const audio = bg.current;
+    if (!audio) return;
+
+    audio.volume = 0.45;
+    audio.loop = true;
+    audio.muted = false;
+
+    try {
+      await audio.play();
+      backgroundMusicEnabled.current = true;
+      setMusic(true);
+    } catch {
+      backgroundMusicEnabled.current = false;
+      setMusic(false);
+    }
+  };
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "ArrowRight" && scene < 7) go(scene + 1);
@@ -730,21 +782,64 @@ function App() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [scene]);
+
+  useEffect(() => {
+    const unlockAudio = () => {
+      if (bg.current && bg.current.paused) {
+        void startMusic();
+      }
+    };
+
+    window.addEventListener("pointerdown", unlockAudio, { once: true });
+    window.addEventListener("keydown", unlockAudio, { once: true });
+
+    return () => {
+      window.removeEventListener("pointerdown", unlockAudio);
+      window.removeEventListener("keydown", unlockAudio);
+    };
+  }, []);
+
+  useEffect(() => {
+    void startMusic();
+  }, []);
+
+  const handleVoicePlaybackChange = (playing: boolean) => {
+    const audio = bg.current;
+    if (!audio) return;
+
+    if (playing) {
+      if (backgroundMusicEnabled.current && !audio.paused) {
+        audio.pause();
+        setMusic(false);
+      }
+      return;
+    }
+
+    if (backgroundMusicEnabled.current) {
+      void startMusic();
+    }
+  };
+
   const toggleMusic = () => {
     if (!bg.current) return;
     if (bg.current.paused) {
-      bg.current
-        .play()
-        .then(() => setMusic(true))
-        .catch(() => {});
+      void startMusic();
     } else {
       bg.current.pause();
+      backgroundMusicEnabled.current = false;
       setMusic(false);
     }
   };
   return (
     <main className="app">
-      <audio ref={bg} src={data.backgroundMusic} loop />
+      <audio
+        ref={bg}
+        src={data.backgroundMusic}
+        loop
+        preload="auto"
+        playsInline
+        autoPlay
+      />
       <AmbientParticles />
       <SceneChrome
         index={scene}
@@ -764,7 +859,12 @@ function App() {
           {scene === 0 && <GiftScene next={() => go(1)} />}{" "}
           {scene === 1 && <BalloonScene next={() => go(2)} />}{" "}
           {scene === 2 && <CakeScene next={() => go(3)} />}{" "}
-          {scene === 3 && <VoiceScene next={() => go(4)} />}{" "}
+          {scene === 3 && (
+            <VoiceScene
+              next={() => go(4)}
+              onVoicePlayStateChange={handleVoicePlaybackChange}
+            />
+          )}{" "}
           {scene === 4 && <MemoriesScene next={() => go(5)} />}{" "}
           {scene === 5 && <LetterScene next={() => go(6)} />}{" "}
           {scene === 6 && <CollageScene next={() => go(7)} />}{" "}
